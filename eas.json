@@ -6,13 +6,16 @@
   "build": {
     "debug": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "node": "20.11.1"
     },
     "accp": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "node": "20.11.1"
     },
     "prod": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "node": "20.11.1"
     }
   },
   "submit": {
