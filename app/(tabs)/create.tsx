@@ -3,6 +3,7 @@ import { useTimerStore } from "@/src/store/useTimerStore";
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Crypto from 'expo-crypto';
 
 export default function Create() {
   const addTimer = useTimerStore((state) => state.addTimer);
@@ -36,8 +37,8 @@ export default function Create() {
     const totalSeconds = h * 3600 + m * 60 + s;
 
     addTimer({
-      id: Date.now().toString(),
-      name,
+      id: Crypto.randomUUID(),
+      name: name,
       duration: totalSeconds,
     });
 
