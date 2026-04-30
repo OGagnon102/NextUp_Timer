@@ -1,5 +1,5 @@
-import { createMMKV } from 'react-native-mmkv'
+import { MMKV } from 'react-native-mmkv'
 
-export const storage = createMMKV({
+export const storage = new MMKV({
   id: "app-storage",
 })
