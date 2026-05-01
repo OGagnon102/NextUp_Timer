@@ -9,3 +9,8 @@ export type TimerGroup = {
   name: string;
   timerIds: string[];
 };
+
+export type InventoryItem =
+  | { type: "timer"; timer: Timer }
+  | { type: "group"; group: TimerGroup }
+  | { type: "groupTimer"; timer: Timer; groupId: string };

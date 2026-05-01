@@ -1,7 +1,6 @@
-// src/store/useTimerStore.ts
 import { create } from "zustand";
-import { storage } from "@storage/mmkv";
-import { Timer, TimerGroup } from "@constants/types";
+import { Timer, TimerGroup } from "@src/constants/types";
+import { storage } from "@src/storage/mmkv";
 
 type State = {
   timers: Timer[];

@@ -1,11 +1,11 @@
 import { staticStyles } from "@/src/constants/styles";
-import { View, Text, StyleSheet } from "react-native";
+import InventoryScreen from "@/src/screens/InventoryScreen";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Inventory() {
   return (
     <SafeAreaView style={staticStyles.container}>
-      <Text style={staticStyles.title}>Liste des timers</Text>
+      <InventoryScreen/>
     </SafeAreaView>
   );
 }
