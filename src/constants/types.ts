@@ -10,6 +10,20 @@ export type TimerGroup = {
   timerIds: string[];
 };
 
+export type InventoryRow =
+  | {
+      id: string;
+      type: "groupHeader";
+      groupId: string;
+      title: string;
+    }
+  | {
+      id: string;
+      type: "timer";
+      timerId: string;
+      groupId?: string;
+    };
+
 export type GroupOption =
   | { type: "none" }
   | { type: "new" }

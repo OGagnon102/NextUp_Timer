@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Slider from "@react-native-community/slider";
 import * as Crypto from 'expo-crypto';
 import { useTimerStore } from "@src/store/useTimerStore";
@@ -73,7 +73,7 @@ export default function CreateTimerScreen() {
   }
 
   return (
-    <>
+    <ScrollView keyboardShouldPersistTaps="handled" style={{borderWidth: 1}}>
       <Text style={staticStyles.title}>Créer un timer</Text>
 
       {/* Nom */}
@@ -100,7 +100,6 @@ export default function CreateTimerScreen() {
           </Text>
         </Pressable>
       ))}
-
       <Pressable
         onPress={() => setSelectedGroup({ type: "new" })}
         style={{ padding: 10 }}
@@ -109,7 +108,6 @@ export default function CreateTimerScreen() {
           {selectedGroup.type === "new" ? "✔ " : ""}Nouveau groupe
         </Text>
       </Pressable>
-
       <Pressable
         onPress={() => setSelectedGroup({ type: "none" })}
         style={{ padding: 10 }}
@@ -122,10 +120,8 @@ export default function CreateTimerScreen() {
       {/* Durée */}
       <Text style={staticStyles.label}>Heure(s) :</Text>
       <SliderStepper value={hours} onChange={setHours} max={23} />
-
       <Text style={staticStyles.label}>Minute(s) :</Text>
       <SliderStepper value={minutes} onChange={setMinutes} />
-      
       <Text style={staticStyles.label}>Seconde(s) :</Text>
       <SliderStepper value={seconds} onChange={setSeconds} />
       
@@ -136,7 +132,7 @@ export default function CreateTimerScreen() {
       <Pressable style={staticStyles.button} onPress={handleCreate}>
         <Text style={staticStyles.buttonText}>Créer</Text>
       </Pressable>
-    </>
+    </ScrollView>
   );
 }
 

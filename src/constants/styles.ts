@@ -1,10 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export const staticStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
+  container: { flex: 1 },
   title: {
     fontSize: 20,
     fontWeight: "bold",
@@ -15,8 +12,6 @@ export const staticStyles = StyleSheet.create({
 
   // Création timer
   label: {
-    marginTop: 16,
-    marginBottom: 6,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -24,7 +19,6 @@ export const staticStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    padding: 10,
   },
   row: {
     flexDirection: "row",
@@ -35,7 +29,6 @@ export const staticStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    padding: 10,
     textAlign: "center",
   },
   button: {

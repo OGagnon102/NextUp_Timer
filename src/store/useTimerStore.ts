@@ -9,6 +9,7 @@ type State = {
   addTimer: (timer: Timer) => void;
   addGroup: (group: TimerGroup) => void;
   addTimerToGroup: (timerId: string, groupId: string) => void;
+  setGroups: (groups: TimerGroup[]) => void;
 
   getTimerById: (id: string) => Timer | undefined;
 };
@@ -43,6 +44,11 @@ export const useTimerStore = create<State>((set, get) => ({
 
     storage.set("groups", JSON.stringify(updated));
     set({ groups: updated });
+  },
+
+  setGroups: (groups) => {
+    storage.set("groups", JSON.stringify(groups));
+    set({ groups });
   },
 
   getTimerById: (id: string) => {

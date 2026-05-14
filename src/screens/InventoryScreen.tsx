@@ -1,18 +1,21 @@
 import { useTimerStore } from "@src/store/useTimerStore";
-import { useState } from "react";
-import { InventoryItem, Section, Timer } from "@src/constants/types";
+import { useMemo, useState } from "react";
+import { InventoryItem, InventoryRow, Section, Timer, TimerGroup } from "@src/constants/types";
 import { FlatList, Pressable, SectionList, Text, View } from "react-native";
 import { staticStyles } from "@src/constants/styles";
 import { router } from "expo-router";
+import DraggableFlatList, { RenderItemParams } from "react-native-draggable-flatlist";
 
 export default function InventoryScreen() {
     const timers = useTimerStore((state) => state.timers);
     const groups = useTimerStore((state) => state.groups);
-
-    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(groups.reduce((acc, group) => {
-        acc[group.id] = false;
-        return acc;
-    }, {} as Record<string, boolean>));
+    const setGroups = useTimerStore((state) => state.setGroups);
+    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
+        groups.reduce((acc, group) => {
+            acc[group.id] = true;
+            return acc;
+        }, {} as Record<string, boolean>)
+    );
 
     function toggleGroup(groupId: string) {
         setOpenGroups((prev) => ({
@@ -21,115 +24,150 @@ export default function InventoryScreen() {
         }));
     }
 
-    function buildSections() {
-        const groupedTimerIds = new Set(groups.flatMap(g => g.timerIds));
-
-        const sections: Section[] = [];
-
-        // GROUPS
-        for (const group of groups) {
-            const data: InventoryItem[] = [];
-
-            if (openGroups[group.id]) {
-                for (const timerId of group.timerIds) {
-                    const timer = timers.find(t => t.id === timerId);
-                    if (timer) {
-                        data.push({ type: "timer", timer });
-                    }
-                }
-            }
-
-            sections.push({ groupId: group.id, title: group.name, data: data });
-        }
-
-        // FREE TIMERS
-        const freeTimers: InventoryItem[] = timers
-            .filter(t => !groupedTimerIds.has(t.id))
-            .map(timer => ({ type: "timer", timer }));
-
-        sections.push({
-            title: "Timers",
-            data: freeTimers,
-        });
-
-        return sections;
-    }
-
     function formatDuration(seconds: number) {
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         const s = seconds % 60;
 
-        return `${h.toString().padStart(2, "0")}:${m
-            .toString()
-            .padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+        return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
     }
 
-    function timerRow({ timer }: { timer: Timer }) {
-        return (
-            <View style={{ flex: 1, flexDirection: "row", borderBottomWidth: 1 }}>
-                <Pressable
-                    onPress={() => router.push(`/timer/${timer.id}`)}
-                    style={{ padding: 12 }}
-                    >
-                    <Text style={{ fontSize: 16, fontWeight: "600" }}>
-                        {timer.name}
-                    </Text>
+    const rows = useMemo(() => {
+        const result: InventoryRow[] = [];
+        const groupedTimerIds = new Set(
+            groups.flatMap((group) => group.timerIds)
+        );
 
-                    <Text style={{ opacity: 0.6 }}>
-                        Durée :{formatDuration(timer.duration)}
+        // GROUPS
+        for (const group of groups) {
+            result.push({ id: `group-${group.id}`, type: "groupHeader",
+                groupId: group.id, title: group.name });
+
+            if (openGroups[group.id]) {
+                for (const timerId of group.timerIds) {
+                    result.push({ id: `timer-${timerId}`, type: "timer",
+                        timerId, groupId: group.id });
+                }
+            }
+        }
+
+        // FREE TIMERS HEADER
+        result.push({ id: "group-free", type: "groupHeader",
+            groupId: "free", title: "Timers" });
+
+        // FREE TIMERS
+        for (const timer of timers) {
+            if (!groupedTimerIds.has(timer.id)) {
+                result.push({ id: `timer-${timer.id}`, type: "timer", timerId: timer.id });
+            }
+        }
+
+        return result;
+    }, [groups, timers, openGroups]);
+
+    function rebuildGroups(rows: InventoryRow[]) {
+        const rebuiltGroups: TimerGroup[] = groups.map((group) => ({
+            ...group,
+            timerIds: [],
+        }));
+
+        let currentGroupId: string | undefined;
+
+        for (const row of rows) {
+            if (row.type === "groupHeader") {
+                currentGroupId = row.groupId === "free" ? undefined : row.groupId;
+                continue;
+            }
+
+            if (row.type === "timer") {
+                if (!currentGroupId) {
+                    continue;
+                }
+
+                const group = rebuiltGroups.find(
+                    (g) => g.id === currentGroupId
+                );
+
+                if (group) {
+                    group.timerIds.push(row.timerId);
+                }
+            }
+        }
+
+        setGroups(rebuiltGroups);
+    }
+
+    function renderItem({ item, drag, isActive }: RenderItemParams<InventoryRow>) {
+        // GROUP HEADER
+        if (item.type === "groupHeader") {
+            const isOpen = item.groupId === "free" ? true : openGroups[item.groupId];
+
+            return (
+                <Pressable
+                    style={{ padding: 12, borderBottomWidth: 1, backgroundColor: "#ddd" }}
+                    onPress={() => {
+                        if (item.groupId !== "free") {
+                            toggleGroup(item.groupId);
+                        }
+                    }}
+                >
+                    <Text style={{ fontSize: 18, fontWeight: "700" }}>
+                        {item.title}{" "}{item.groupId !== "free" && (isOpen ? "▼" : "▶")}
                     </Text>
                 </Pressable>
-            </View>
+            );
+        }
+
+        // TIMER ROW
+        const timer = timers.find((t) => t.id === item.timerId);
+
+        if (!timer) {
+            return null;
+        }
+
+        return (
+            <Pressable
+                onLongPress={drag}
+                delayLongPress={150}
+                onPress={() => router.push(`/timer/${timer.id}`)}
+                style={{ padding: 16, paddingLeft: item.groupId ? 32 : 16,
+                    borderBottomWidth: 1, backgroundColor: isActive ? "#bbb" : "white",
+                }}
+            >
+                <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                    {timer.name}
+                </Text>
+                <Text style={{ opacity: 0.6, marginTop: 4 }}>
+                    Durée : {formatDuration(timer.duration)}
+                </Text>
+            </Pressable>
         );
     }
 
-    function renderItem({ item }: { item: InventoryItem }) {
-        switch (item.type) {
-            case "group":
-                return (
-                    <Pressable onPress={() => toggleGroup(item.group.id)}>
-                        <Text style={{ fontWeight: "bold", fontSize: 18 }}>
-                            {item.group.name}
-                        </Text>
-                    </Pressable>
-                );
-
-            case "groupTimer":
-                return (
-                    <Pressable onPress={() => console.log("Group timer pressed")} style={{ paddingLeft: 20 }}>
-                        <Text>{item.timer.name}</Text>
-                    </Pressable>
-                );
-
-            case "timer":
-                return timerRow({ timer: item.timer });
-        }
-    }
-
-    const sections = buildSections();
-
     return (
-        <>
-            <Text style={staticStyles.title}>Mes timers</Text>
-            <SectionList
-                sections={sections}
-                renderSectionHeader={({ section }) => (
-                    <Pressable style={{ borderBottomWidth: 1 }} onPress={() => section.groupId && toggleGroup(section.groupId)}>
-                        <Text style={{ fontWeight: "bold", fontSize: 18, padding: 4 }}>
-                            {section.title} {section.groupId && (openGroups[section.groupId] ? "▼" : "▶")}
-                        </Text>
-                    </Pressable>
-                )}
+        <View style={{ flex: 1 }}>
+            <Text style={staticStyles.title}>
+                Mes timers
+            </Text>
+            <DraggableFlatList
+                data={rows}
+                keyExtractor={(item) => item.id}
                 renderItem={renderItem}
-                style={{ borderWidth: 1, borderRadius: 8}}
+                onDragEnd={({ data }) => {
+                    rebuildGroups(data);
+                }}
+                containerStyle={{ borderWidth: 1, borderRadius: 8 }}
                 ListEmptyComponent={
                     <View style={{ alignItems: "center", marginTop: 40 }}>
-                        <Text>Aucun timer pour le moment</Text>
-                        <Text>Crée ton premier timer ⏱️</Text>
+                        <Text>
+                            Aucun timer pour le moment
+                        </Text>
+                        <Text>
+                            Crée ton premier timer ⏱️
+                        </Text>
                     </View>
                 }
             />
-        </>
+        </View>
     );
 }
